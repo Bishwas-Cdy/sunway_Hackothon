@@ -1,0 +1,113 @@
+Geospatial Data
+    Road Network (OSM)
+    Elevation (DEM) - OpenTopography Portal
+    Hydrology layers (OpenStreetMap)
+
+Weather & Flood Data
+    1. Rainfall Forecast (Primary Input)
+        This is the most important driver of flood risk.
+            OpenWeatherMap API
+                Free tier: 60 calls/minute, 1M calls/month.
+                Provides 5-day forecast in 3-hour steps.
+                Endpoint: https://api.openweathermap.org/data/2.5/forecast
+                Variable: rain.3h → mm of rain in 3 hours.
+                Best hackathon choice (easy API, free)
+
+    2. Local Rainfall & Flood Warnings (Validation Layer)
+        These are authoritative data sources you can overlay for realism.
+            Nepal DHM (Department of Hydrology & Meteorology)
+            Website publishes rainfall bulletins, flood warnings, and gauge data.
+            Can scrape or screenshot for hackathon demo.
+            They don’t have a public real-time API, so treat this as an “authoritative overlay” rather than raw input.
+
+    3. Historical Flood Data (Context & Model Training)
+        DesInventar / ReliefWeb → disaster databases with past flood events in Nepal.
+        NASA GloFAS (Global Flood Awareness System) → reanalysis datasets for floods.
+        Use case:
+            Show “hotspot” roads that historically flooded.
+            Train/test a simple logistic regression on past events.
+
+Combine rainfall forecast with geospatial features (from earlier):
+    Flood Risk Score = f(rainfall intensity + elevation + distance to river)
+    Example rule-based thresholds (for demo):
+        Rainfall > 10mm/3h AND road elevation < 1350m AND dist_to_river < 100m → High Risk
+        Rainfall 5–10mm/3h OR low elevation OR near river → Medium Risk
+        Else → Low Risk
+
+
+
+Stack / Infrastructure
+    DataBase:
+        PostgreSQL = database core.
+        PostGIS = map + spatial superpowers.
+            SQL schema:
+                1. roads
+                    road_id (PK)
+                    name (text)
+                    geom (LineString, 4326)
+                    elev (float) → from DEM
+                    dist_to_river (float) → from hydrology layer
+                    risk_level (text: Low/Med/High)
+                2. rivers
+                    river_id (PK)
+                    name (text)
+                    geom (LineString, 4326)
+                3. rainfall_forecast
+                    forecast_id (PK)
+                    ts (timestamp)
+                    rainfall_mm (float)
+                    geom (Point, 4326)
+                4. road_risk_history (time-series of risk updates)
+                    id (PK)
+                    road_id (FK → roads)
+                    ts (timestamp)
+                    risk_level (text)
+                5. crowd_reports
+                    report_id (PK)
+                    road_id (FK → roads, optional)
+                    ts (timestamp)
+                    user_id (text / anon)
+                    status (text: flooded/clear)
+            With this setup:
+                ETL scripts populate roads, rivers, DEM values.
+                Weather API fills rainfall_forecast.
+                Your risk engine updates road_risk_history.
+                Users add inputs to crowd_reports.
+
+    Backend (Data + API)
+        Language: Python
+        Framework: Flask (lightweight, fast for hackathons)
+            Tasks:
+            ETL scripts (pull OSM, DEM, rainfall API).
+            Risk engine (combine rainfall + elevation + rivers → Low/Med/High).
+            REST API endpoints (serve roads with risk levels, accept crowd reports).
+            Libs you’ll need:
+            GeoPandas → handle shapefiles/GeoJSON.
+            Rasterio → read DEM rasters.
+            Shapely → geometry operations.
+            psycopg2 or SQLAlchemy → connect Flask ↔ PostGIS.
+            requests → call OpenWeatherMap API.
+
+    Frontend (Visualization)
+    Framework: React
+    Map library: Leaflet (simple, lightweight, works with OSM basemaps).
+        Tasks:
+            Show roads colored by risk (green/orange/red).
+            On-click: popup with road details (risk score, elevation, rainfall, river distance).
+            “Report Flood” button → POST to backend.
+        Optional add-ons:
+                Mapbox (prettier basemaps, free dev tier).
+                Chart.js or Recharts (show rainfall trend graphs).
+
+    Alerts / Messaging
+        Telegram Bot API (free, hackathon-friendly).
+            Push flood alerts to users.
+            Accept “/report flood roadID123” commands.
+        (Optional) Email (SendGrid free tier).
+        (Skip SMS → costs money).
+
+    Routing Engine (Safe Path)
+        Option 1: pgRouting (works directly inside PostGIS).
+        Option 2: Python NetworkX (load road graph into memory, run Dijkstra).
+            Task: Return safe route avoiding “High-risk” roads.
+
