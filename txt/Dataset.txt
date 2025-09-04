@@ -1,0 +1,44 @@
+Data required for FloodWatch road-level prediction
+    The data can be thought of in three buckets:
+        A) Static geospatial data (permanent features of Kathmandu roads)
+            OSM road network → geometry, road class, surface, lanes, bridges.
+            DEM (Digital Elevation Model) → elevation, slope, flow accumulation.
+            Rivers/streams layer (OSM or hydro database) → distance to river, floodplain.
+            These datasets do not change frequently. They are extracted once and stored as features for every road segment.
+
+        B) Dynamic rainfall data (drives flooding)
+            Forecast rainfall (OpenWeatherMap API) → 3-hour steps.
+            Historical rainfall reanalysis (NASA GPM IMERG, 2000–present) → for training labels.
+            For each heavy-rain event, rainfall data is joined with road features.
+
+        C) Flood outcome data (labels)
+            This is the most challenging but critical part. It requires:
+                Past flood incident maps/polygons (e.g., Sentinel-1 SAR flood footprints, UNOSAT, ReliefWeb, Cloud-to-Street).
+                Reports or road closures (if mapped).
+                These are used to label: “This road flooded during this event” (1) versus “not flooded” (0).
+
+Amount of data required
+    For a hackathon demo (MVP model):
+        3–5 past flood events in Kathmandu can be sufficient (each event = a “training batch”).
+        Each event contains thousands of road segments, resulting in ~10k–30k rows.
+        This is enough to train a simple logistic regression or XGBoost model that appears convincing.
+
+For a research-grade model:
+    Ideally, 20–30 flood events (covering several years of monsoon seasons).
+    Each event again produces thousands of road samples → ~100k+ labeled rows.
+    This allows proper event-level train/test splits.
+    Minimum viable dataset (for Kathmandu use case)
+    OSM roads: ~50k segments in the valley.
+    DEM: 30m resolution SRTM or 12m Copernicus DEM → clipped to the valley.
+    Rivers: OSM river/stream geometries.
+    Rainfall forecast: live from OpenWeather (for demo).
+    Historical rainfall: NASA IMERG (for training context).
+    Flood polygons: at least 3 events (Sentinel-1 SAR, UNOSAT).
+    With this dataset, it is possible to:
+    Train a lightweight model.
+    Run forecasts on live rainfall.
+    Show alerts and map risk levels at road scale.
+
+In summary:
+    What is needed → Roads, DEM, rivers, rainfall (forecast + historical), and flood outcomes (labels).
+    How much is needed → Minimum: 3–5 flood events (~10k labeled road-event rows). Strong model: 20+ events (~100k+ rows).

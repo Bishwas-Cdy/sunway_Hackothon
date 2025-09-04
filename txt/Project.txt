@@ -7,3 +7,7 @@ Solution (FloodWatch Kathmandu):
 
 Goal:
     When heavy rainfall happens (forecast or observed), automatically predict which road segments in Kathmandu Valley are likely to flood, then notify registered users whose saved routes or area are affected and provide safe alternatives.
+
+Model objective (conditional prediction)
+    Train a model that predicts:
+        P(road flooded∣heavy rainfall event at area/time, road features, rainfall intensity)
