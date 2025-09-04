@@ -1,7 +1,7 @@
 Core Project Framing (for hackathon pitch + implementation)
     Problem: Kathmandu Valley faces frequent flash floods during monsoons due to heavy rainfall, poor drainage, and rapid urbanization. Drivers, commuters, and logistics operators often don’t know which roads will flood until they’re already stuck.
 Solution (FloodWatch Kathmandu):
-    Predict road-level flood risk ahead of rainfall.
+    Predict road-level flood risk during of rainfall.
     Alert registered users (email/SMS) when their commute routes are impacted.
     Guide them with safe alternate routes via a web dashboard.
 
